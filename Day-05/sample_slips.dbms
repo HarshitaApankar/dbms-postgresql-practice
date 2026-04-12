@@ -1,0 +1,308 @@
+---------------------------------------------sample slip 1----------------------------------------
+-- Project Table
+CREATE TABLE Project (
+    pno INT PRIMARY KEY,
+    pname VARCHAR(30) NOT NULL,
+    ptype VARCHAR(20),
+    duration INT CHECK (duration > 0)
+);
+
+-- Employee Table
+CREATE TABLE Employee (
+    eno INT PRIMARY KEY,
+    ename VARCHAR(20),
+    qualification VARCHAR(15),
+    joining_date DATE
+);
+
+-- Relationship Table (Many-to-Many)
+CREATE TABLE Works_On (
+    eno INT,
+    pno INT,
+    start_date DATE,
+    no_of_hours_worked INT,
+    PRIMARY KEY (eno, pno),
+    FOREIGN KEY (eno) REFERENCES Employee(eno),
+    FOREIGN KEY (pno) REFERENCES Project(pno)
+);
+
+
+-- Insert into Project
+INSERT INTO Project VALUES (101, 'Library System', 'Software', 6);
+INSERT INTO Project VALUES (102, 'Bank App', 'Application', 8);
+INSERT INTO Project VALUES (103, 'AI Chatbot', 'Research', 12);
+INSERT INTO Project VALUES (105, 'Test Project', 'Demo', 0);
+
+SELECT* FROM Project;
+
+--Insert into Employee 
+INSERT INTO Employee VALUES 
+(1, 'Rahul', 'BTech', TO_DATE('10-01-2022','DD-MM-YYYY'));
+
+INSERT INTO Employee VALUES 
+(2, 'Sneha', 'MCA', TO_DATE('15-03-2021','DD-MM-YYYY'));
+
+INSERT INTO Employee VALUES 
+(3, 'Amit', 'BSc', TO_DATE('20-06-2023','DD-MM-YYYY'));
+
+SELECT* FROM Employee;
+
+-- Insert into Works_On
+INSERT INTO Works_On VALUES 
+(1, 101, TO_DATE('01-02-2024','DD-MM-YYYY'), 40);
+
+INSERT INTO Works_On VALUES 
+(1, 102, TO_DATE('05-02-2024','DD-MM-YYYY'), 35);
+
+INSERT INTO Works_On VALUES 
+(2, 101, TO_DATE('10-02-2024','DD-MM-YYYY'), 30);
+
+INSERT INTO Works_On VALUES 
+(3, 103, TO_DATE('15-02-2024','DD-MM-YYYY'), 45);
+
+SELECT* FROM Works_On;
+
+--Function to Count Number of Projects of an Employee
+CREATE OR REPLACE FUNCTION count_emp(eid int)
+RETURNS INT AS $$
+DECLARE 
+count_project int;
+BEGIN
+SELECT COUNT(*) INTO count_project FROM Works_On WHERE eno=eid;
+RETURN count_project;
+END;
+$$
+LANGUAGE plpgsql;
+
+SELECT count_emp(1);
+
+--trigger Before inserting into Project table, duration must be greater than 0
+CREATE OR REPLACE FUNCTION check_duration()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.duration <= 0 THEN
+        RAISE EXCEPTION 'Duration must be greater than zero';
+    END IF;
+
+    RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER duration_trigger
+BEFORE INSERT ON Project
+FOR EACH ROW
+EXECUTE FUNCTION check_duration();
+
+--write a procedure to accept three numbers from user and display addition,subtraction,
+--multiplication of three numbers.
+
+CREATE OR REPLACE PROCEDURE calc_three_numbers(
+    num1 INT,
+    num2 INT,
+    num3 INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    addition INT;
+    subtraction INT;
+    multiplication INT;
+BEGIN
+    addition := num1 + num2 + num3;
+    subtraction := num1 - num2 - num3;
+    multiplication := num1 * num2 * num3;
+
+    RAISE NOTICE 'Addition: %', addition;
+    RAISE NOTICE 'Subtraction: %', subtraction;
+    RAISE NOTICE 'Multiplication: %', multiplication;
+END;
+$$;
+
+
+CALL calc_three_numbers(10, 5, 2);
+
+--------------------------------------------sample slip 2----------------------------------
+/*Section II: Database Management Systems II
+
+[15 Marks]
+
+Consider the following Person–Area database:
+
+Person
+(pnumber integer, pname varchar(20), birthdate date, income money)
+
+Area
+(aname varchar(20), area_type varchar(5))
+
+The relationships are as follows:
+
+Person–Area: M : 1
+
+The attribute ‘area_type’ can have values either ‘urban’ or ‘rural’.*/
+
+
+CREATE TABLE Areaa(aname varchar(20) primary key,
+                  area_type varchar(5) CHECK (area_type IN('urban','rural')));
+
+
+CREATE TABLE Personn(pnumber int primary key,
+                    pnamer varchar(20),
+					birthdate date,
+					income int,
+					aname varchar(20),
+					foreign key(aname)references Areaa(aname));
+
+INSERT INTO Areaa VALUES ('Ahmedabad', 'urban');
+INSERT INTO Areaa VALUES ('Kheda', 'rural');
+INSERT INTO Areaa VALUES ('Pune', 'rural');
+
+
+INSERT INTO Personn VALUES 
+(1, 'Rahul', '2002-05-10', 30000, 'Ahmedabad');
+INSERT INTO Person VALUES 
+(-5, 'Test', '2000-01-01', 20000, 'Pune');
+INSERT INTO Personn VALUES 
+(2, 'Sneha', '2001-08-15', 25000, 'Kheda');
+
+SELECT*FROM Areaa;
+SELECT*FROM Personn;
+
+
+--function: total persons of particular area
+
+CREATE OR REPLACE FUNCTION count_person(area_name varchar)
+RETURNs INT 
+AS $$
+DECLARE 
+total_count int;
+BEGIN
+SELECT COUNT(*) INTO total_count FROM Personn WHERE aname=area_name;
+RETURN total_count;
+END;
+$$
+LANGUAGE plpgsql;
+
+SELECT count_person('Ahmedabad');
+
+--Function: sum of income by area_type (urban/rural)
+
+CREATE OR REPLACE FUNCTION sum_income_area_type(atype varchar)
+RETURNS INT AS $$
+
+DECLARE 
+sum_income INT;
+
+BEGIN
+SELECT SUM(income) INTO sum_income FROM Personn WHERE aname IN
+(SELECT aname FROM Areaa WHERE area_type=atype);
+
+RETURN sum_income;
+
+END;
+$$
+LANGUAGE plpgsql;
+
+SELECT sum_income_area_type('urban');
+
+--Write a procedure to accept two numbers and display division of two numbers.
+--Use RAISE to display error message for division by zero
+
+CREATE OR REPLACE PROCEDURE division_number(a int,b int)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+c INT;
+BEGIN
+   IF(b=0) THEN 
+   RAISE EXCEPTION 'Numerator cannot be divisible by 0';
+   END IF;
+   
+   c=a/b;
+   RAISE NOTICE 'Division result : %',c;
+  END;
+$$;
+
+CALL division_number(10,0);
+
+/*Using above Database Solve the following
+
+[10 Marks]
+
+Write a cursor to update the income of all people living in ‘Urban’ area by 10%.
+
+OR
+
+Write a trigger before inserting the record of person if the person number is negative raise the message "Invalid Number".
+Write a procedure to display all odd numbers from 1 to 100.
+[5 Marks]*/
+
+CREATE OR REPLACE PROCEDURE update_income_urban()
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+    rec RECORD;
+	cur CURSOR FOR
+	     SELECT pnumber,income
+		 FROM Personn
+		 WHERE aname IN(SELECT aname from Areaa WHERE area_type='urban');
+
+BEGIN
+      OPEN cur;
+	  LOOP
+	  FETCH cur INTO rec;
+	  EXIT WHEN NOT FOUND;
+
+	  UPDATE Personn
+	  SET income=rec.income*1.10
+	  WHERE pnumber=rec.pnumber;
+
+	  END LOOP;
+
+	  CLOSE cur;
+	  RAISE NOTICE'Income updated by 10%% for urban area people';
+
+ END;
+ $$;
+
+CALL update_income_urban();
+
+SELECT* FROM Personn;
+
+--Write a trigger before inserting the record of person if 
+--the person number is negative raise the message "Invalid Number".
+
+CREATE OR REPLACE FUNCTION person_number_negative()
+RETURNS TRIGGER AS $$
+BEGIN
+      IF NEW.pnumber<0 THEN
+	  RAISE EXCEPTION 'Invalid number';
+	  END IF;
+
+	  RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;	  
+
+CREATE TRIGGER trigger_check_pnumber
+BEFORE INSERT ON Personn
+FOR EACH ROW
+EXECUTE FUNCTION person_number_negative();
+
+-- Procedure to Display Odd Numbers (1 to 100)
+CREATE OR REPLACE PROCEDURE display_odd_numbers()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    i INT := 1;
+BEGIN
+    WHILE i <= 100 LOOP
+        IF i % 2 <> 0 THEN
+            RAISE NOTICE '%', i;
+        END IF;
+        i := i + 1;
+    END LOOP;
+END;
+$$;
+
+CALL display_odd_numbers()
