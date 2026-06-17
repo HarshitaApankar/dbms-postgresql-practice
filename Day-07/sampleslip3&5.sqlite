@@ -1,0 +1,242 @@
+------------------------------------------sample slip 3-------------------------------------------------
+/*Section II: Database Management Systems – II
+
+[15 Marks]
+
+Consider the following database:
+
+Customer
+(cno integer, cname varchar(20), city varchar(20))
+
+Account
+(a_no int, a_type varchar(10), opening_date date, balance money)
+
+Customer and Account are related with a one-to-many relationship.*/
+
+CREATE TABLE Customer(cno int primary key,
+                      cname varchar(20),
+					  city varchar(20));
+
+
+CREATE TABLE Account(a_no int PRIMARY KEY,
+                     a_type varchar(10),
+					 opening_date date,
+					 balance money,
+					 cno INT,
+					 FOREIGN KEY(cno) REFERENCES Customer(cno));
+
+INSERT INTO Customer VALUES
+(1, 'Rahul', 'Pune'),
+(2, 'Sneha', 'Mumbai'),
+(3, 'Amit', 'Pune'),
+(4, 'Priya', 'Delhi');
+
+SELECT * FROM Customer;
+
+INSERT INTO Account VALUES
+(101, 'Saving', '2023-01-10', 50000, 1),
+(102, 'Current', '2022-06-15', 75000, 2),
+(103, 'Saving', '2023-03-20', 30000, 3),
+(104, 'Fixed', '2021-12-01', 100000, 1),
+(105, 'Current', '2022-08-11', 75000, 4);
+
+SELECT * FROM Account;
+
+/*Q2) Using above Database Solve the following
+
+[10 Marks]
+
+Write a function using cursor which accepts city name as input and 
+prints the details of all customers in that city.*/
+
+CREATE OR REPLACE FUNCTION print_details(city_name varchar)
+RETURNS TEXT AS $$
+DECLARE
+       rec RECORD;
+	   cur CURSOR FOR
+	   SELECT * FROM Customer WHERE city=city_name;
+BEGIN
+     OPEN cur;
+	    LOOP
+	         FETCH cur INTO rec;
+		     EXIT WHEN NOT FOUND;
+
+			 RAISE NOTICE'Customer id: %,Name: %,City: %',
+			 rec.cno,rec.cname,rec.city;
+		END LOOP;
+	  CLOSE cur;
+   RETURN'Customer details displayed successfully!';
+   END;
+ $$
+ LANGUAGE plpgsql;
+
+ /* Write a trigger which does not allow deletion of accounts of _SAVING__ type.*/
+
+CREATE OR REPLACE FUNCTION delete_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+      IF OLD.a_type='Saving' THEN
+	  RAISE EXCEPTION 'Account cannot be deleted';
+	  END IF;
+
+	  RETURN OLD;
+END;
+$$
+LANGUAGE plpgsql;	 
+
+CREATE TRIGGER check_account_delete
+BEFORE DELETE ON Account
+FOR EACH ROW
+EXECUTE FUNCTION delete_trigger();   
+					  
+DELETE FROM Account WHERE a_type = 'Saving';
+
+
+--Write a procedure to display all customers from ‘Pune’ city.
+CREATE OR REPLACE PROCEDURE display_customer()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+     rec RECORD;
+BEGIN
+     FOR rec IN SELECT * FROM Customer WHERE city='Pune'
+	 LOOP
+        RAISE NOTICE 'Customer No: %, Name: %, City: %',
+                     rec.cno, rec.cname, rec.city;
+    END LOOP;
+END; 
+$$;
+
+CALL display_customer();
+
+-----------------------------------------sample slip 5--------------------------
+/*Section II: Database Management Systems – II
+Consider the following database:
+
+Item
+(itemno integer, itemname varchar(20), quantity integer)
+
+Supplier
+(supplierno integer, supplier_name varchar(20), city varchar(20))
+
+Item and Supplier are related with a many-to-many relationship.
+Rate is a descriptive attribute.*/
+
+CREATE TABLE Item(itemno INT PRIMARY KEY,
+                  itemname VARCHAR(20),
+				  quantity INT);
+
+CREATE TABLE Supplier(supplierno INT PRIMARY KEY,
+                      supplier_name VARCHAR(20),
+					  city VARCHAR(20));
+
+CREATE TABLE Item_Supplier(itemno INT,
+                           supplierno INT,
+						   PRIMARY KEY(itemno,supplierno),
+						   FOREIGN KEY(itemno)REFERENCES Item(itemno),
+						   FOREIGN KEY(supplierno)REFERENCES Supplier(supplierno),
+						   rate INT);
+
+INSERT INTO Item VALUES
+(1, 'Pen', 100),
+(2, 'Notebook', 200),
+(3, 'Pencil', 150);
+
+INSERT INTO Supplier VALUES
+(101, 'ABC Traders', 'Mumbai'),
+(102, 'XYZ Suppliers', 'Pune'),
+(103, 'Global Mart', 'Delhi');
+
+INSERT INTO Item_Supplier VALUES
+(1, 101, 20),
+(1, 102, 25),
+(2, 101, 50),
+(2, 103, 55),
+(3, 102, 10),
+(3, 103, 12);
+
+SELECT * FROM Item;
+SELECT * FROM Supplier;
+SELECT * FROM Item_Supplier;
+						   
+--1.Write a stored function using cursors to accept Item name 
+--from the user and display the Rate and Supplier Name for that item.
+
+CREATE OR REPLACE FUNCTION get_item_details(p_itemname VARCHAR)
+RETURNS TEXT AS $$
+DECLARE
+    rec RECORD;
+
+    cur CURSOR FOR
+        SELECT supplier_name, rate
+        FROM Item, Supplier, Item_Supplier
+        WHERE Item.itemno = Item_Supplier.itemno
+        AND Supplier.supplierno = Item_Supplier.supplierno
+        AND itemname = p_itemname;
+
+BEGIN
+    OPEN cur;
+
+    LOOP
+        FETCH cur INTO rec;
+        EXIT WHEN NOT FOUND;
+
+        RAISE NOTICE 'Supplier Name: %, Rate: %',
+                     rec.supplier_name,
+                     rec.rate;
+    END LOOP;
+
+    CLOSE cur;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT get_item_details('Pencil');	
+
+/*Write a trigger before update on rate field.
+If the difference between old rate and new rate is more than Rs 200,
+raise an exception and display the corresponding message.*/
+
+CREATE OR REPLACE FUNCTION trigger_update_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+   IF abs(OLD.rate-NEW.rate>200) THEN
+   RAISE EXCEPTION 'Difference between old rate and new rate is more than Rs 200';
+   END IF;
+  RETURN NEW;
+ END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER rate_trigger
+BEFORE UPDATE ON Item_Supplier
+FOR EACH ROW
+EXECUTE FUNCTION trigger_update_rate();
+
+--procedure to accept and display addition,subtraction, multiplication and 
+--division of two numbers.
+
+CREATE OR REPLACE PROCEDURE operations(a int,b int)
+LANGUAGE plpgsql AS $$
+DECLARE
+addi int;
+sub int;
+mul int;
+div int;
+BEGIN
+addi=a+b;
+raise info'addition of two numbers % and % is :%',a,b,addi;
+sub=a-b;
+raise info'subtraction of two numbers % and % is :%',a,b,sub;
+mul=a*b;
+raise info'multiplication of two numbers % and % is :%',a,b,mul;
+div=a/b;
+raise info'division of two numbers % and % is :%',a,b,div;
+END;
+$$
+
+CALL operations(10,5)
+
+------------------------------------sample slip 6----------------------------
+/*Section II: Database Management Systems–II
+
+[15 Marks]
