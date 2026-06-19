@@ -1,0 +1,269 @@
+------------------------------------sample slip 6----------------------------
+/*Section II: Database Management Systems–II
+
+[15 Marks]
+
+Consider the following Entities and their Relationship:
+Student
+Student (s_no integer, s_name char(20), address char(25), class char(10))
+
+Teacher
+Teacher (t_no integer, t_name char(10), qualification char(10), experience integer)
+
+Relationship
+Relationship between Student and Teacher is Many to Many with descriptive attributes:
+subject
+marks_scored*/
+
+/*Constraints:
+Primary Key
+s_name should not be NULL
+t_name should not be NULL
+marks_scored > 0*/
+
+CREATE TABLE Students(s_no int PRIMARY KEY NOT NULL,
+                     s_name varchar(20),
+					 address varchar(25),
+					 class varchar(10));
+
+CREATE TABLE Teachers(t_no int PRIMARY KEY NOT NULL,
+                     t_name varchar(10),
+					 qualification varchar(10),
+					 experience int);
+					  
+CREATE TABLE Students_Teachers(s_no INT,
+                             t_no INT,
+							 PRIMARY KEY(s_no,t_no),
+							 FOREIGN KEY(s_no) REFERENCES Students(s_no),
+							 FOREIGN KEY(t_no) REFERENCES Teachers(t_no),
+							 subject VARCHAR(20),
+							 marks_scored INT CHECK (marks_scored>0));
+
+INSERT INTO Students VALUES
+(1, 'Rahul', 'Ahmedabad', 'TYBCA'),
+(2, 'Sneha', 'Surat', 'SYBCA'),
+(3, 'Amit', 'Vadodara', 'FYBCA');
+
+INSERT INTO Teachers VALUES
+(101, 'Sharma', 'MCA', 8),
+(102, 'Patel', 'MSc', 5),
+(103, 'Mehta', 'PhD', 12);
+
+INSERT INTO Students_Teachers VALUES
+(1, 101, 'RDBMS', 85),
+(2, 101, 'RDBMS', 78),
+(3, 102, 'CN', 88),
+(1, 103, 'Java', 90);
+
+SELECT * FROM Students;
+SELECT * FROM Teachers;
+SELECT * FROM Students_Teachers;
+
+/*Q2) Using above Database Solve the following
+[10 Marks]
+Write a cursor which will accept student number from the user and display student
+name along with teacher name who taught “RDBMS” subject.*/
+
+CREATE OR REPLACE FUNCTION student_teacher_subject(st_no int)
+RETURNS TEXT AS $$
+DECLARE
+  rec RECORD;
+  
+  cur CURSOR FOR
+  SELECT s_name,t_name 
+  FROM Students,Teachers,Students_Teachers
+  WHERE Students.s_no=Students_Teachers.s_no
+  AND Teachers.t_no=Students_Teachers.t_no
+  AND subject='RDBMS'
+  AND Students.s_no=st_no;
+
+BEGIN
+    OPEN cur;
+	
+	LOOP
+	FETCH cur INTO rec;
+	EXIT WHEN NOT FOUND;
+
+	RAISE NOTICE 'Student Name: %, Teacher Name: %',
+                     rec.s_name, rec.t_name;
+	END LOOP;
+	CLOSE cur;
+ END;
+ $$
+ LANGUAGE plpgsql;
+
+SELECT student_teacher_subject(2);
+
+/*Write a trigger before insert the record of student.
+If student number is less than or equal to zero, 
+give message as “Invalid Number”.*/
+
+CREATE OR REPLACE FUNCTION trigger_student_no()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.s_no<=0) THEN 
+	RAISE EXCEPTION 'Invalid Number, student number is less than or equal to zero';
+	END IF;
+	RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER student_no
+BEFORE INSERT ON Students
+FOR EACH ROW
+EXECUTE FUNCTION trigger_student_no()
+
+INSERT INTO Students VALUES
+(-3, 'Radhika', 'Mumbai', 'SYBCA');
+
+/*Write a procedure to accept two numbers 
+from user and display minimum and maximum from two numbers.*/
+
+CREATE OR REPLACE PROCEDURE min_max(a INT, b INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF a > b THEN
+        RAISE INFO 'Maximum is %', a;
+        RAISE INFO 'Minimum is %', b;
+
+    ELSIF a < b THEN
+        RAISE INFO 'Maximum is %', b;
+        RAISE INFO 'Minimum is %', a;
+
+    ELSE
+        RAISE INFO 'Both numbers are equal: %', a;
+    END IF;
+END;
+$$;
+
+CALL min_max(10,20);
+
+/*------------------------sample slip 7------------------------
+
+
+Section II: Database Management Systems-II [15 Marks]
+Consider the following database maintained by a school about students and competitions.
+STUDENT (sreg_no int , name char(30), class char(10))
+COMPETITION (c_no int , name char(20), C_type char(15))
+
+The relationship is as follows:
+STUDENT-COMPETITION: M-M with described attributes rank, year and prize(int).*/
+
+CREATE TABLE Studentss(sreg_no int PRIMARY KEY ,
+                     name VARCHAR(30),
+					 class varchar(10));
+
+CREATE TABLE Competition(c_no int PRIMARY KEY ,name char(20),
+					    c_type char(15))
+
+CREATE TABLE Student_Competition(sreg_no INT,
+                                 c_no INT,
+								 PRIMARY KEY(sreg_no,c_no),
+								 FOREIGN KEY(sreg_no) REFERENCES Studentss(sreg_no),
+								 FOREIGN KEY(c_no) REFERENCES Competition(c_no),
+								 rank int,
+								 year INT,
+								 prize INT)
+								 
+INSERT INTO Studentss VALUES 
+(101, 'Alice Johnson', '10-A'),
+(102, 'Bob Smith', '10-B'),
+(103, 'Charlie Davis', '11-A'),
+(104, 'Diana Prince', '12-C');
+
+INSERT INTO Competition VALUES 
+(1, 'Inter-School Quiz', 'Academic'),
+(2, '100m Sprint', 'Sports'),
+(3, 'Annual Debate', 'Academic'),
+(4, 'Chess Championship', 'Indoor');
+
+INSERT INTO Student_Competition VALUES 
+(101, 1, 1, 2020, 5000), 
+(101, 2, 3, 2020, 1000),
+(102, 1, 2, 2020, 3000),
+(103, 3, 1, 2021, 4000), 
+(104, 4, 1, 2020, 2500),
+(102, 4, 2, 2020, 1500); 
+
+SELECT* FROM Studentss;
+
+SELECT* FROM Competition;
+
+SELECT *FROM Student_Competition;
+
+/*Q2) Using above Database Solve the following [10 Marks]
+Define a trigger before updating a competition table. Raise a notice and 
+display message “competition record is being updated”.*/
+
+CREATE OR REPLACE FUNCTION trigger_update()
+RETURNS TRIGGER AS $$
+BEGIN
+	   RAISE NOTICE 'Competition record is being updated';
+	   RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_competi
+BEFORE UPDATE ON Competition
+FOR EACH ROW
+EXECUTE FUNCTION trigger_update();
+
+
+UPDATE Competition
+SET name = 'State Level'
+WHERE c_no = 1;
+
+/*Write a function using cursor which accepts a name of student and returns
+the total no of prizes won by that student in the year 2020.*/
+
+CREATE OR REPLACE FUNCTION cursor_student_prize(student_name VARCHAR)
+RETURNS TEXT AS $$
+DECLARE
+      rec RECORD;
+	  total_count INT:=0;
+	  
+	  cur CURSOR FOR
+	  SELECT prize
+      FROM Students, Competition, Student_Competition
+      WHERE Students.s_no = Student_Competition.s_no
+      AND Competition.c_no = Student_Competition.c_no
+      AND s_name = stud_name
+      AND year = 2020;
+
+BEGIN
+      OPEN cur;
+       LOOP
+	   FETCH cur INTO rec;
+
+	   EXIT WHEN NOT FOUND;
+       total_count := total_count + 1;
+    END LOOP;
+
+    CLOSE cur;
+
+    RETURN total_count;
+
+END;
+$$
+LANGUAGE plpgsql;
+
+/*Write a procedure to accept two numbers from user and display division of two numbers
+use raise to display divided by zero exception messages. [5 marks]*/
+
+CREATE OR REPLACE PROCEDURE division_two_number(a int,b int)
+LANGUAGE plpgsql AS $$
+DECLARE 
+     division int;
+BEGIN
+     IF (b=0) THEN 
+	 RAISE EXCEPTION'divided by zero not possible';
+     END IF ;
+	 division=a/b;
+	 RAISE INFO'division of % and % is: %',a,b,division;
+END;	 
+$$;
+
+CALL division_two_number(10,0);
