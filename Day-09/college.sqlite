@@ -1,0 +1,21 @@
+CREATE DATABASE CollegeDB;
+USE CollegeDB;
+
+CREATE TABLE Student (
+    student_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    age INT,
+    course VARCHAR(30),
+    marks INT
+);
+
+INSERT INTO Student VALUES
+(1, 'Harshita', 20, 'BCA', 85),
+(2, 'Riya', 19, 'BSc', 72),
+(3, 'Aman', 21, 'BCA', 90),
+(4, 'Sneha', 20, 'BCom', 65);
+
+SELECT * FROM Student;
+
+SELECT * FROM Student
+WHERE marks > 80;
