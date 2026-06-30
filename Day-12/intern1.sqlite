@@ -1,0 +1,192 @@
+CREATE TABLE departments (
+    dept_id INT GENERATED ALWAYS AS IDENTITY(START WITH 100 INCREMENT BY 1) PRIMARY KEY,
+    dept_name   VARCHAR(50),
+    location    VARCHAR(50)
+);
+
+INSERT INTO departments(dept_name,location) VALUES
+('HR','Silvassa'),
+('IT','Vapi'),
+('QA','Pune'),
+('Production','Mumbai'),
+('Manufacturing','Vasai'),
+('QC','Palghar')
+
+SELECT* FROM departments;
+
+CREATE TABLE employees (
+    emp_id      INT GENERATED ALWAYS AS IDENTITY(START WITH 1 INCREMENT BY 1)PRIMARY KEY,
+    emp_name    VARCHAR(50),
+    age         INT,
+    gender      VARCHAR(10),
+    dept_id     INT,
+    salary      DECIMAL(10,2),
+    hire_date   DATE,
+    manager_id  INT,
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id),
+    FOREIGN KEY (manager_id) REFERENCES employees(emp_id)
+);
+
+INSERT INTO employees (emp_name, age, gender, dept_id, salary, hire_date, manager_id) VALUES
+('Riya Sharma', 29, 'F', 101, 55000, '2021-03-15', NULL),
+('Aman Verma', 34, 'M', 101, 62000, '2020-07-01', NULL),
+('Kavita Joshi', 26, 'F', 101, 41000, '2023-01-10', 1),
+('Sahil Mehta', 38, 'M', 100, 48000, '2019-05-20', NULL),
+('Pooja Nair', 31, 'F', 100, 39000, '2022-09-05', 4),
+('Rohit Singh', 45, 'M', 103, 75000, '2015-02-11', NULL),
+('Neha Kapoor', 27, 'F', 103, 36000, '2023-06-18', 6),
+('Karan Patel', 33, 'M', 104, 58000, '2018-11-30', NULL),
+('Anjali Desai', 24, 'F', 104, 32000, '2024-01-22', 8),
+('Vivek Rao', 40, 'M', 102, 67000, '2017-04-09', NULL),
+('Simran Kaur', 29, 'F', 102, 45000, '2021-10-14', 10),
+('Arjun Iyer', 36, 'M', 105, 52000, '2019-08-25', NULL),
+('Divya Pillai', 28, 'F', 105, 38000, '2022-12-01', 12),
+('Manish Gupta', 41, 'M', 101, 70000, '2016-06-17', NULL),
+('Priya Reddy', 25, 'F', 100, 34000, '2023-09-09', 4);
+
+SELECT* FROM employees;
+
+CREATE TABLE projects (
+    project_id    INT PRIMARY KEY,
+    project_name  VARCHAR(50),
+    dept_id       INT,
+    start_date    DATE,
+    budget        DECIMAL(12,2),
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+);
+
+INSERT INTO projects (project_id, project_name, dept_id, start_date, budget) VALUES
+(1, 'Payroll Automation', 101, '2023-01-15', 800000),
+(2, 'Employee Onboarding Portal', 100, '2022-06-01', 300000),
+(3, 'Quality Audit System', 102, '2023-03-20', 450000),
+(4, 'Plant Efficiency Upgrade', 103, '2021-11-10', 1500000),
+(5, 'Equipment Maintenance Tracker', 104, '2022-08-05', 600000),
+(6, 'Compliance Testing Suite', 105, '2023-05-12', 250000),
+(7, 'Internal HR Chatbot', 100, '2024-01-01', 200000);
+
+SELECT* FROM projects;
+
+CREATE TABLE salarys (
+    salary_id   INT PRIMARY KEY,
+    emp_id      INT,
+    basic       DECIMAL(10,2),
+    bonus       DECIMAL(10,2),
+    deduction   DECIMAL(10,2),
+    pay_month   DATE,
+    FOREIGN KEY (emp_id) REFERENCES employees(emp_id)
+);
+
+INSERT INTO salarys (salary_id, emp_id, basic, bonus, deduction, pay_month) VALUES
+(1, 1, 45000, 5000, 2000, '2024-01-01'),
+(2, 2, 50000, 6000, 2500, '2024-01-01'),
+(3, 3, 35000, 3000, 1500, '2024-01-01'),
+(4, 4, 40000, 4000, 2000, '2024-01-01'),
+(5, 5, 32000, 2500, 1200, '2024-01-01'),
+(6, 6, 60000, 7000, 3000, '2024-01-01'),
+(7, 7, 30000, 2000, 1000, '2024-01-01'),
+(8, 8, 48000, 5000, 2200, '2024-01-01'),
+(9, 9, 27000, 1500, 900, '2024-01-01'),
+(10, 10, 55000, 6000, 2800, '2024-01-01');
+
+SELECT * FROM salarys;
+
+----------------------SECTION A-------------------------
+--1. Get all employees whose age is above 30.
+SELECT * FROM employees WHERE age>30;
+
+--2. List employee names and salaries, sorted by salary in descending order.
+SELECT emp_name,salary FROM employees ORDER BY salary DESC;
+
+--3. Find employees whose name starts with "A".
+SELECT * FROM employees WHERE emp_name LIKE 'A%';
+
+--4. Get all employees who work in department ID 3.
+SELECT * FROM employees WHERE dept_id=103;
+
+--5. List employees hired after 2022-01-01.
+SELECT* FROM employees WHERE hire_date>'2022-01-01';
+
+--6. Find employees whose salary is between 30000 and 60000.
+SELECT * FROM employees WHERE salary BETWEEN 30000 AND 60000;
+
+--7. Get distinct department IDs from the EMPLOYEE table.
+SELECT DISTINCT dept_id FROM employees;
+
+--8. List all male employees aged between 25 and 40.
+SELECT * FROM employees WHERE gender='M' AND age BETWEEN 25 AND 40;
+
+--9. Find employees whose name contains the letter "i".
+SELECT *  FROM employees WHERE emp_name LIKE '%i%'
+
+--10. Get the top 5 highest paid employees.
+SELECT * FROM employees ORDER BY salary DESC LIMIT(5); 
+
+-------------------------SECTION B----------------------------
+--11. Find the total number of employees in each department.
+SELECT dept_id,COUNT(*) FROM employees GROUP BY dept_id;
+
+--12. Get the average salary of employees in each department.
+SELECT dept_id,AVG(salary) AS avg_salary FROM employees GROUP BY dept_id
+
+--13.13. Find the maximum salary in the company.
+SELECT MAX(salary) AS maximum_salary FROM employees;
+
+--14. Get the count of employees for each gender.
+SELECT gender,COUNT(*) FROM employees GROUP BY gender;
+
+--15. Find departments having more than 5 employees.
+SELECT dept_id,COUNT(*) FROM employees GROUP BY dept_id HAVING COUNT(*)>3;
+
+--16. Get the total salary expense per department.
+SELECT dept_id,sum(salary) AS total_salary FROM employees GROUP BY dept_id;
+
+--17. Find the minimum and maximum age in each department.
+SELECT dept_id,MAX(age) AS max_age,MIN(age) AS min_age FROM employees GROUP BY dept_id;
+
+--18. Get the average age of employees, grouped by department,
+--only where average age > 28.
+SELECT dept_id,AVG(age) AS average_age FROM employees GROUP BY dept_id HAVING AVG(age)>28;
+
+--19. Count how many employees were hired each year.
+SELECT EXTRACT(YEAR FROM hire_date) AS hire_year,COUNT(*) FROM employees GROUP BY EXTRACT(YEAR FROM hire_date);
+
+--20. Find the department with the highest total salary expense.
+SELECT dept_id,MAX(salary) as max_salary FROM employees GROUP BY dept_id ORDER BY MAX(salary) DESC LIMIT(1);
+
+-----------------------------SECTION C JOINS----------------------
+--21. List employee names along with their department names.
+SELECT e.emp_name,d.dept_name FROM employees e INNER JOIN departments d ON e.dept_id=d.dept_id;
+
+--22. Find employees who work in the "IT" department 
+--(use department name, not ID).
+SELECT * FROM employees WHERE dept_id IN
+(SELECT dept_id FROM departments WHERE dept_name='IT')
+
+--23. Get a list of all departments and the number of employees
+--in each (include departments with zero employees).
+SELECT d.dept_name, COUNT(e.emp_id) AS count_employee
+FROM departments d
+LEFT JOIN employees e ON e.dept_id = d.dept_id
+GROUP BY d.dept_name;
+
+--24. List project names along with the department running them.
+SELECT p.project_name,d.dept_name FROM projects p
+INNER JOIN departments d
+ON p.dept_id=d.dept_id;
+
+--25. Find employees who are working on a project with a budget
+--greater than 500000.
+SELECT e.emp_name,p.budget FROM employees e INNER JOIN projects p ON
+e.dept_id=p.dept_id WHERE p.budget>500000 ORDER BY p.budget DESC;
+
+--26. Get the names of employees and their managers (self-join).
+SELECT e.emp_name AS employee_name, m.emp_name AS manager_name
+FROM employee e
+LEFT JOIN employee m ON e.manager_id = m.emp_id;
+
+--27. List all departments that currently have no employees.
+SELECT dept_name 
+FROM departments 
+WHERE dept_id IN (
+    SELECT dept_id FROM employees WHERE dept_id IS NULL
+);
